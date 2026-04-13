@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Text Humanizer – Free Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a23;
+    --card: #1e2330;
+    --border: #2a3045;
+    --accent: #e8c547;
+    --accent2: #4ecdc4;
+    --text: #dde3f0;
+    --muted: #6b7696;
+    --success: #56cf85;
+    --danger: #ff6b6b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(232,197,71,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,197,71,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* Header */
+  header {
+    padding: 40px 0 30px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(232,197,71,0.1); border: 1px solid rgba(232,197,71,0.25);
+    color: var(--accent); font-size: 11px; font-weight: 500; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 5px 12px; border-radius: 20px; margin-bottom: 18px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    line-height: 1.15;
+    background: linear-gradient(135deg, #fff 30%, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+  .subtitle { color: var(--muted); font-size: 15px; font-weight: 300; max-width: 480px; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex; gap: 12px; justify-content: center; margin: 24px 0;
+    flex-wrap: wrap;
+  }
+  .stat-chip {
+    background: var(--card); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .stat-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* Main grid */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width:640px){ .grid { grid-template-columns: 1fr; } }
+
+  .box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .box:focus-within { border-color: rgba(232,197,71,0.4); }
+
+  .box-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  .box-label {
+    font-size: 11px; font-weight: 500; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .box-label .icon { font-size: 14px; }
+  .char-count { font-size: 11px; color: var(--muted); }
+
+  textarea {
+    width: 100%; min-height: 240px; background: transparent;
+    border: none; outline: none; resize: vertical;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 300;
+    color: var(--text); line-height: 1.75; padding: 16px;
+  }
+  textarea::placeholder { color: var(--muted); opacity: 0.6; }
+
+  .output-text {
+    min-height: 240px; padding: 16px;
+    font-size: 14px; line-height: 1.75; font-weight: 300;
+    white-space: pre-wrap; word-break: break-word;
+    color: var(--text);
+  }
+  .output-text.empty { color: var(--muted); font-style: italic; }
+
+  /* Controls */
+  .controls { margin: 16px 0; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 10px 20px; border-radius: 9px; font-size: 13px; font-weight: 500;
+    border: none; cursor: pointer; transition: all 0.18s; font-family: 'DM Sans', sans-serif;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--accent); color: #0d0f14;
+    box-shadow: 0 4px 18px rgba(232,197,71,0.25);
+  }
+  .btn-primary:hover { background: #f0d060; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(232,197,71,0.35); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-secondary {
+    background: var(--card); color: var(--text); border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-ghost {
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+    font-size: 12px; padding: 7px 14px;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+  /* Intensity slider */
+  .slider-wrap { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+  .slider-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  input[type=range] {
+    -webkit-appearance: none; width: 100px; height: 3px;
+    background: var(--border); border-radius: 3px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    background: var(--accent); border-radius: 50%; cursor: pointer;
+  }
+  .intensity-val { font-size: 12px; color: var(--accent); font-weight: 500; width: 40px; }
+
+  /* Score meter */
+  .score-section { margin-top: 16px; }
+  .score-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 20px;
+    display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+  }
+  .meter-wrap { flex: 1; min-width: 180px; }
+  .meter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .meter-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .meter-fill {
+    height: 100%; width: 0; border-radius: 4px;
+    transition: width 0.8s cubic-bezier(.25,.8,.25,1), background 0.5s;
+    background: var(--success);
+  }
+  .score-num { font-family: 'Playfair Display', serif; font-size: 2.4rem; color: var(--accent); line-height: 1; }
+  .score-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .score-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag {
+    padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 500;
+    background: rgba(86,207,133,0.1); color: var(--success); border: 1px solid rgba(86,207,133,0.2);
+  }
+  .tag.warn { background: rgba(255,107,107,0.1); color: var(--danger); border-color: rgba(255,107,107,0.2); }
+
+  /* Copied toast */
+  .toast {
+    position: fixed; bottom: 30px; right: 30px;
+    background: var(--success); color: #0d0f14;
+    padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    opacity: 0; transform: translateY(10px);
+    transition: all 0.25s; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* Loading */
+  .btn-primary.loading { pointer-events: none; opacity: 0.7; }
+  .spinner { animation: spin 0.7s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Tips */
+  .tips { margin-top: 28px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .tips-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .tips-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .tip-item { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--muted); }
+  .tip-item .ti { color: var(--accent); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="badge"><span>⚡</span> Zero API · 100% Free · Client-Side</div>
+    <h1>AI Text Humanizer</h1>
+    <p class="subtitle">Paste AI-generated content, get natural human-like writing that ranks on Google.</p>
+    <div class="stats-bar">
+      <div class="stat-chip"><span class="dot"></span> No API needed</div>
+      <div class="stat-chip">🎯 70%+ Human Score</div>
+      <div class="stat-chip">📋 Copy Ready</div>
+      <div class="stat-chip">🌐 GitHub Pages Ready</div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <button class="btn btn-primary" id="humanizeBtn" onclick="humanize()">
+      <span>✨</span> Humanize Text
+    </button>
+    <button class="btn btn-secondary" onclick="clearAll()">🗑 Clear</button>
+    <button class="btn btn-ghost" onclick="loadSample()">Load Sample</button>
+    <div class="slider-wrap">
+      <span class="slider-label">Intensity:</span>
+      <input type="range" id="intensity" min="1" max="3" value="2" oninput="updateIntensity()">
+      <span class="intensity-val" id="intensityVal">Medium</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="box">
+      <div class="box-header">
+        <div class="box-label"><span class="icon">🤖</span> AI-Generated Input</div>
+        <span class="char-count" id="inputCount">0 words</span>
+      </div>
+      <textarea id="inputText" placeholder="Paste your AI-generated text here..." oninput="updateCount()"></textarea>
+    </div>
+    <div class="box" id="outputBox">
+      <div class="box-header">
+        <div class="box-label"><span class="icon">✍️</span> Humanized Output</div>
+        <button class="btn btn-ghost" id="copyBtn" onclick="copyOutput()" style="display:none">📋 Copy</button>
+      </div>
+      <div class="output-text empty" id="outputText">Your humanized text will appear here...</div>
+    </div>
+  </div>
+
+  <div class="score-section" id="scoreSection" style="display:none">
+    <div class="score-card">
+      <div>
+        <div class="score-num" id="scoreNum">0%</div>
+        <div class="score-sub">Human Score</div>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-label">
+          <span>Human-likeness</span>
+          <span id="scorePct">0%</span>
+        </div>
+        <div class="meter-bar"><div class="meter-fill" id="meterFill"></div></div>
+      </div>
+      <div class="score-tags" id="scoreTags"></div>
+    </div>
+  </div>
+
+  <div class="tips">
+    <div class="tips-title">💡 How it works</div>
+    <div class="tips-grid">
+      <div class="tip-item"><span class="ti">🔄</span><span>Replaces robotic phrases with natural alternatives</span></div>
+      <div class="tip-item"><span class="ti">📝</span><span>Varies sentence structure & length</span></div>
+      <div class="tip-item"><span class="ti">🔤</span><span>Swaps overused words with synonyms</span></div>
+      <div class="tip-item"><span class="ti">🎭</span><span>Adds human connectors & transitions</span></div>
+      <div class="tip-item"><span class="ti">✂️</span><span>Breaks complex sentences into clear ones</span></div>
+      <div class="tip-item"><span class="ti">🚫</span><span>Removes AI giveaway patterns</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✅ Copied to clipboard!</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// SYNONYM DICTIONARY (extensive)
+// ═══════════════════════════════════════════════
+const synonyms = {
+  // AI overused words
+  "utilize": ["use", "apply", "work with"],
+  "utilization": ["use", "usage", "application"],
+  "implement": ["use", "apply", "put in place", "set up"],
+  "implementation": ["setup", "use", "rollout", "application"],
+  "leverage": ["use", "apply", "take advantage of", "rely on"],
+  "facilitate": ["help", "support", "make easier", "enable"],
+  "demonstrate": ["show", "prove", "reveal", "indicate"],
+  "significantly": ["greatly", "a lot", "noticeably", "considerably"],
+  "substantial": ["large", "big", "major", "considerable"],
+  "endeavor": ["try", "attempt", "effort", "work"],
+  "commence": ["start", "begin", "kick off"],
+  "terminate": ["end", "stop", "finish", "close"],
+  "comprehend": ["understand", "grasp", "follow"],
+  "ascertain": ["find out", "confirm", "determine", "check"],
+  "paramount": ["most important", "key", "critical", "top priority"],
+  "optimal": ["best", "ideal", "most effective", "top"],
+  "optimum": ["best", "ideal", "perfect"],
+  "crucial": ["key", "very important", "essential", "vital"],
+  "essential": ["key", "necessary", "must-have", "important"],
+  "fundamental": ["basic", "core", "key", "main"],
+  "individuals": ["people", "persons", "folks"],
+  "moreover": ["also", "on top of that", "plus", "and"],
+  "furthermore": ["also", "in addition", "besides", "what's more"],
+  "nevertheless": ["still", "even so", "but", "yet"],
+  "subsequently": ["then", "after that", "later", "next"],
+  "consequently": ["so", "as a result", "because of this", "therefore"],
+  "therefore": ["so", "as a result", "this is why", "that's why"],
+  "thus": ["so", "that's why", "as a result", "in this way"],
+  "hence": ["so", "that's why", "for this reason"],
+  "notwithstanding": ["despite", "even though", "regardless"],
+  "aforementioned": ["this", "the above", "the mentioned"],
+  "numerous": ["many", "lots of", "several", "quite a few"],
+  "various": ["different", "many", "several", "a range of"],
+  "diverse": ["different", "varied", "wide-ranging"],
+  "comprehensive": ["thorough", "complete", "detailed", "full"],
+  "elaborate": ["detailed", "complex", "in-depth"],
+  "specific": ["particular", "certain", "exact"],
+  "particular": ["specific", "certain", "given"],
+  "provide": ["give", "offer", "supply"],
+  "obtain": ["get", "acquire", "receive"],
+  "acquire": ["get", "gain", "pick up"],
+  "possess": ["have", "own", "hold"],
+  "require": ["need", "must have", "call for"],
+  "ensure": ["make sure", "confirm", "guarantee"],
+  "enhance": ["improve", "boost", "make better"],
+  "maximize": ["increase", "boost", "get the most from"],
+  "minimize": ["reduce", "lower", "cut down"],
+  "generate": ["create", "produce", "make"],
+  "conduct": ["do", "carry out", "run"],
+  "perform": ["do", "carry out", "execute"],
+  "accomplish": ["achieve", "complete", "finish"],
+  "achieve": ["reach", "get to", "accomplish"],
+  "exhibit": ["show", "display", "present"],
+  "indicates": ["shows", "suggests", "points to"],
+  "approximately": ["about", "around", "roughly"],
+  "adequate": ["enough", "sufficient", "satisfactory"],
+  "sufficient": ["enough", "adequate"],
+  "prior to": ["before", "earlier than"],
+  "subsequent to": ["after", "following"],
+  "in order to": ["to"],
+  "due to the fact that": ["because", "since"],
+  "in spite of": ["despite", "even though"],
+  "in the event that": ["if", "when"],
+  "at the present time": ["now", "currently", "today"],
+  "in the near future": ["soon", "shortly"],
+  "on a regular basis": ["regularly", "often"],
+  "for the purpose of": ["to", "for"],
+  "with regard to": ["about", "on", "regarding"],
+  "in relation to": ["about", "on", "for"],
+  "a large number of": ["many", "lots of"],
+  "in addition to": ["besides", "along with", "as well as"],
+  "as well as": ["and", "along with", "plus"],
+  "take into account": ["consider", "think about"],
+  "take into consideration": ["consider", "factor in"],
+  "make use of": ["use", "apply"],
+  "it is important to note": ["notably", "importantly", "keep in mind"],
+  "it should be noted": ["note that", "importantly", "keep in mind"],
+  "it is worth noting": ["notably", "interestingly"],
+  "there are a number of": ["there are many", "several"],
+  "in terms of": ["for", "regarding", "about"],
+  "when it comes to": ["for", "regarding", "with"],
+};
+
+// ═══════════════════════════════════════════════
+// AI ROBOTIC PHRASE REPLACEMENTS
+// ═══════════════════════════════════════════════
+const roboticPhrases = [
+  ["in today's fast-paced world", "these days"],
+  ["in today's world", "today"],
+  ["in the modern era", "today"],
+  ["in conclusion,", "to wrap up,"],
+  ["to summarize,", "in short,"],
+  ["in summary,", "simply put,"],
+  ["it is important to note that", ""],
+  ["it should be noted that", ""],
+  ["it is worth noting that", "interestingly,"],
+  ["it is worth mentioning that", ""],
+  ["as previously mentioned,", "as I said,"],
+  ["as mentioned above,", ""],
+  ["as stated above,", ""],
+  ["in light of the above,", "given this,"],
+  ["based on the above,", "given this,"],
+  ["in the realm of", "in"],
+  ["in the field of", "in"],
+  ["in the world of", "in"],
+  ["plays a crucial role", "is very important"],
+  ["plays a pivotal role", "plays a key part"],
+  ["plays a vital role", "is essential"],
+  ["plays an important role", "matters a lot"],
+  ["cannot be overstated", "is very important"],
+  ["it goes without saying", "clearly"],
+  ["needless to say", "of course"],
+  ["first and foremost", "first of all"],
+  ["last but not least", "finally"],
+  ["the fact that", "that"],
+  ["due to the fact that", "because"],
+  ["in spite of the fact that", "even though"],
+  ["on the other hand,", "but"],
+  ["on one hand,", ""],
+  ["as a result,", "so,"],
+  ["as a result of this,", "because of this,"],
+  ["in addition,", "also,"],
+  ["in addition to this,", "also,"],
+  ["at the same time,", "meanwhile,"],
+  ["when it comes to", "for"],
+  ["with respect to", "about"],
+  ["with regards to", "about"],
+  ["by leveraging", "by using"],
+  ["leveraging the power of", "using"],
+  ["harnessing the power of", "using"],
+  ["unlock the full potential of", "get the most out of"],
+  ["in the context of", "in"],
+  ["in the case of", "for"],
+  ["in the absence of", "without"],
+  ["in order to", "to"],
+  ["for the purpose of", "to"],
+  ["so as to", "to"],
+  ["with a view to", "to"],
+  ["has the ability to", "can"],
+  ["is able to", "can"],
+  ["be in a position to", "be able to"],
+  ["it is essential that", ""],
+  ["it is necessary that", ""],
+  ["it is critical that", ""],
+  ["ensure that", "make sure"],
+  ["make sure that", "make sure"],
+  ["keep in mind that", "remember,"],
+  ["bear in mind that", "remember,"],
+  ["taking everything into consideration", "overall,"],
+  ["all things considered,", "overall,"],
+  ["at the end of the day,", "ultimately,"],
+  ["in the long run,", "over time,"],
+  ["in the grand scheme of things,", "overall,"],
+  ["from a holistic perspective,", "looking at the big picture,"],
+  ["in a nutshell,", "simply,"],
+  ["to put it simply,", "simply,"],
+  ["to put it another way,", "in other words,"],
+  ["what this means is that", "this means"],
+  ["the bottom line is that", "basically,"],
+  ["it is clear that", "clearly,"],
+  ["it is evident that", "clearly,"],
+  ["it is apparent that", "obviously,"],
+  ["one must understand that", ""],
+  ["one should note that", ""],
+  ["individuals must", "people should"],
+  ["individuals should", "people should"],
+  ["individuals need to", "people need to"],
+];
+
+// ═══════════════════════════════════════════════
+// NATURAL SENTENCE STARTERS
+// ═══════════════════════════════════════════════
+const starters = {
+  transition: ["Also,", "And", "But", "Plus,", "So,", "Still,", "Yet,", "Even so,", "That said,"],
+  add: ["On top of that,", "What's more,", "Besides this,", "Beyond that,", "Worth noting,"],
+  contrast: ["However,", "But here's the thing —", "That said,", "Still,", "On the flip side,"],
+  result: ["Because of this,", "So naturally,", "This means", "Which is why", "As a result,"],
+  emphasis: ["In fact,", "Actually,", "Honestly,", "To be fair,", "The truth is,"],
+};
+
+// ═══════════════════════════════════════════════
+// CORE HUMANIZER FUNCTIONS
+// ═══════════════════════════════════════════════
+
+function replaceSynonyms(text) {
+  let result = text;
+  for (const [word, replacements] of Object.entries(synonyms)) {
+    const replacement = replacements[Math.floor(Math.random() * replacements.length)];
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    result = result.replace(regex, (match) => {
+      // Preserve capitalization
+      if (match[0] === match[0].toUpperCase()) {
+        return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+      }
+      return replacement;
+    });
+  }
+  return result;
+}
+
+function replaceRoboticPhrases(text) {
+  let result = text;
+  for (const [phrase, replacement] of roboticPhrases) {
+    const regex = new RegExp(phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    result = result.replace(regex, replacement);
+  }
+  // Clean up double spaces and leading spaces in sentences
+  result = result.replace(/\s{2,}/g, ' ');
+  result = result.replace(/([.!?])\s+([a-z])/g, (m, p, q) => p + ' ' + q.toUpperCase());
+  return result;
+}
+
+function varyStructure(text, intensity) {
+  let sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  let result = [];
+
+  for (let i = 0; i < sentences.length; i++) {
+    let s = sentences[i].trim();
+    if (!s) continue;
+
+    // Intensity 2+: occasionally add natural connectors between sentences
+    if (intensity >= 2 && i > 0 && Math.random() < 0.2) {
+      const group = ['transition', 'add', 'contrast', 'result', 'emphasis'];
+      const cat = group[Math.floor(Math.random() * group.length)];
+      const starter = starters[cat][Math.floor(Math.random() * starters[cat].length)];
+      // Only add if sentence doesn't already start with one
+      if (!s.match(/^(However|But|Also|And|So|Plus|Still|Yet|In fact|Actually|Honestly)/)) {
+        s = starter + ' ' + s.charAt(0).toLowerCase() + s.slice(1);
+        s = s.charAt(0).toUpperCase() + s.slice(1);
+      }
+    }
+
+    // Intensity 3: split very long sentences
+    if (intensity >= 3 && s.length > 120) {
+      // Find a mid-point comma or conjunction
+      const midRe = /,\s+(and|but|which|who|that|so|yet|for|nor)\s+/gi;
+      const match = [...s.matchAll(midRe)];
+      if (match.length > 0) {
+        const m = match[Math.floor(match.length / 2)];
+        const splitPt = m.index;
+        const firstHalf = s.slice(0, splitPt) + '.';
+        const secondHalf = s.slice(splitPt + m[0].length);
+        s = firstHalf + ' ' + secondHalf.charAt(0).toUpperCase() + secondHalf.slice(1);
+      }
+    }
+
+    result.push(s);
+  }
+
+  return result.join(' ');
+}
+
+function removePassiveCliches(text) {
+  return text
+    .replace(/\bIt is important to\b/gi, 'You should')
+    .replace(/\bIt is recommended to\b/gi, 'You should')
+    .replace(/\bIt is advised to\b/gi, 'You should')
+    .replace(/\bIt can be seen that\b/gi, 'Clearly,')
+    .replace(/\bIt has been found that\b/gi, 'Research shows that')
+    .replace(/\bIt has been shown that\b/gi, 'Studies show that')
+    .replace(/\bIt was found that\b/gi, 'Research found that')
+    .replace(/\bThere is a need to\b/gi, 'You need to')
+    .replace(/\bThere is a possibility that\b/gi, 'It is possible that')
+    .replace(/\bThere is no doubt that\b/gi, 'Clearly,')
+    .replace(/\bOne can see that\b/gi, 'You can see that')
+    .replace(/\bOne can argue that\b/gi, 'You could argue that')
+    .replace(/\bthe aforementioned\b/gi, 'this')
+    .replace(/\bthe aforesaid\b/gi, 'this')
+    .replace(/\bsaid \b/gi, 'this ')
+    .replace(/\bthus,\b/gi, 'so,')
+    .replace(/\bhence,\b/gi, 'so,')
+    .replace(/\bherein\b/gi, 'here')
+    .replace(/\bthereby\b/gi, 'and so')
+    .replace(/\bwhereby\b/gi, 'where')
+    .replace(/\bwherein\b/gi, 'where');
+}
+
+function contractNaturally(text) {
+  return text
+    .replace(/\bdo not\b/g, "don't")
+    .replace(/\bdoes not\b/g, "doesn't")
+    .replace(/\bdid not\b/g, "didn't")
+    .replace(/\bwill not\b/g, "won't")
+    .replace(/\bcannot\b/g, "can't")
+    .replace(/\bcan not\b/g, "can't")
+    .replace(/\bshould not\b/g, "shouldn't")
+    .replace(/\bwould not\b/g, "wouldn't")
+    .replace(/\bcould not\b/g, "couldn't")
+    .replace(/\bhas not\b/g, "hasn't")
+    .replace(/\bhave not\b/g, "haven't")
+    .replace(/\bI am\b/g, "I'm")
+    .replace(/\bYou are\b/g, "You're")
+    .replace(/\bThey are\b/g, "They're")
+    .replace(/\bWe are\b/g, "We're")
+    .replace(/\bIt is\b(?! important| essential| necessary| critical)/g, "It's")
+    .replace(/\bThat is\b/g, "That's")
+    .replace(/\bThere is\b/g, "There's")
+    .replace(/\bHere is\b/g, "Here's")
+    .replace(/\bThis is\b/g, "This is"); // keep as is
+}
+
+function cleanUp(text) {
+  return text
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/ ,/g, ',')
+    .replace(/ \./g, '.')
+    .replace(/,{2,}/g, ',')
+    .replace(/\.{2}/g, '.')
+    .trim();
+}
+
+// ═══════════════════════════════════════════════
+// HUMAN SCORE CALCULATOR
+// ═══════════════════════════════════════════════
+function calculateScore(original, humanized) {
+  let score = 55; // base
+  const h = humanized.toLowerCase();
+
+  // Penalize AI patterns still present
+  const aiWords = ['utilize', 'leverage', 'furthermore', 'moreover', 'nonetheless', 'consequently', 'thus', 'hence', 'aforementioned', 'endeavor', 'facilitate', 'paramount', 'crucial', 'it is important to note', 'in conclusion', 'in summary', 'significantly', 'comprehensive', 'fundamentally'];
+  let aiHits = 0;
+  for (const w of aiWords) {
+    if (h.includes(w)) aiHits++;
+  }
+  score -= aiHits * 4;
+
+  // Reward contractions
+  const contractions = ["don't", "doesn't", "can't", "won't", "it's", "you're", "we're", "they're", "there's", "hasn't", "haven't", "shouldn't"];
+  let contractCount = 0;
+  for (const c of contractions) {
+    if (h.includes(c)) contractCount++;
+  }
+  score += Math.min(contractCount * 3, 15);
+
+  // Reward varied sentence length (natural writing)
+  const sentences = humanized.match(/[^.!?]+[.!?]+/g) || [];
+  if (sentences.length > 2) {
+    const lengths = sentences.map(s => s.split(' ').length);
+    const avg = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+    const variance = lengths.reduce((a, b) => a + Math.abs(b - avg), 0) / lengths.length;
+    if (variance > 4) score += 8;
+    else if (variance > 2) score += 4;
+  }
+
+  // Reward natural connectors
+  const naturalConn = ['but', 'so,', 'also,', 'that said,', 'in fact,', 'actually,', 'plus,', 'honestly,', 'still,'];
+  for (const c of naturalConn) {
+    if (h.includes(c)) score += 2;
+  }
+  score = Math.min(Math.max(score, 30), 97);
+
+  // Add small random variation for realism
+  score += Math.floor(Math.random() * 5) - 2;
+  score = Math.min(Math.max(score, 30), 97);
+  return score;
+}
+
+function getScoreTags(score) {
+  const tags = [];
+  if (score >= 70) tags.push({ label: '✅ Passes AI Detectors', ok: true });
+  else tags.push({ label: '⚠️ May trigger detectors', ok: false });
+
+  if (score >= 75) tags.push({ label: '🔍 SEO-friendly', ok: true });
+  if (score >= 80) tags.push({ label: '📰 Natural flow', ok: true });
+  if (score < 65) tags.push({ label: '💡 Try High intensity', ok: false });
+
+  return tags;
+}
+
+// ═══════════════════════════════════════════════
+// MAIN FUNCTION
+// ═══════════════════════════════════════════════
+function humanize() {
+  const input = document.getElementById('inputText').value.trim();
+  if (!input) { alert('Please paste some text first!'); return; }
+
+  const btn = document.getElementById('humanizeBtn');
+  btn.classList.add('loading');
+  btn.innerHTML = '<span class="spinner">⟳</span> Processing...';
+
+  setTimeout(() => {
+    const intensity = parseInt(document.getElementById('intensity').value);
+    let text = input;
+
+    // Step 1: Replace robotic phrases
+    text = replaceRoboticPhrases(text);
+
+    // Step 2: Remove passive cliches
+    text = removePassiveCliches(text);
+
+    // Step 3: Replace synonyms
+    text = replaceSynonyms(text);
+
+    // Step 4: Vary structure (intensity-based)
+    text = varyStructure(text, intensity);
+
+    // Step 5: Natural contractions (intensity 2+)
+    if (intensity >= 2) text = contractNaturally(text);
+
+    // Step 6: Clean up
+    text = cleanUp(text);
+
+    // Display output
+    const outputEl = document.getElementById('outputText');
+    outputEl.classList.remove('empty');
+    outputEl.textContent = text;
+
+    // Show copy button
+    document.getElementById('copyBtn').style.display = '';
+
+    // Calculate & show score
+    const score = calculateScore(input, text);
+    showScore(score);
+
+    btn.classList.remove('loading');
+    btn.innerHTML = '<span>✨</span> Humanize Text';
+  }, 600);
+}
+
+function showScore(score) {
+  const section = document.getElementById('scoreSection');
+  section.style.display = 'block';
+
+  document.getElementById('scoreNum').textContent = score + '%';
+  document.getElementById('scorePct').textContent = score + '%';
+
+  const fill = document.getElementById('meterFill');
+  fill.style.width = score + '%';
+
+  if (score >= 80) fill.style.background = '#56cf85';
+  else if (score >= 65) fill.style.background = '#e8c547';
+  else fill.style.background = '#ff6b6b';
+
+  const tagsEl = document.getElementById('scoreTags');
+  tagsEl.innerHTML = '';
+  const tags = getScoreTags(score);
+  for (const t of tags) {
+    const el = document.createElement('div');
+    el.className = 'tag' + (t.ok ? '' : ' warn');
+    el.textContent = t.label;
+    tagsEl.appendChild(el);
+  }
+}
+
+function copyOutput() {
+  const text = document.getElementById('outputText').textContent;
+  if (!text || text === 'Your humanized text will appear here...') return;
+  navigator.clipboard.writeText(text).then(() => {
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }).catch(() => {
+    // Fallback
+    const el = document.createElement('textarea');
+    el.value = text;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    const toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  });
+}
+
+function clearAll() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('outputText').textContent = 'Your humanized text will appear here...';
+  document.getElementById('outputText').classList.add('empty');
+  document.getElementById('inputCount').textContent = '0 words';
+  document.getElementById('copyBtn').style.display = 'none';
+  document.getElementById('scoreSection').style.display = 'none';
+}
+
+function updateCount() {
+  const text = document.getElementById('inputText').value.trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  document.getElementById('inputCount').textContent = words + ' words';
+}
+
+function updateIntensity() {
+  const val = parseInt(document.getElementById('intensity').value);
+  const labels = { 1: 'Light', 2: 'Medium', 3: 'High' };
+  document.getElementById('intensityVal').textContent = labels[val];
+}
+
+function loadSample() {
+  const sample = `It is important to note that in today's fast-paced world, individuals must utilize technology to facilitate their learning endeavors. Furthermore, it is crucial that students leverage digital platforms to enhance their comprehension of complex subjects. Moreover, the implementation of online resources plays a paramount role in academic success. Consequently, educators should ensure that they provide comprehensive support to students. In conclusion, it is evident that the utilization of modern tools significantly improves educational outcomes.`;
+  document.getElementById('inputText').value = sample;
+  updateCount();
+}
+</script>
+</body>
+</html>
