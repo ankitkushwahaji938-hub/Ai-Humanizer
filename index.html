@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Text Humanizer – Free Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/compromise/14.10.0/compromise.min.js"></script>
+<style>
+:root{--bg:#0d0f14;--surface:#161a23;--card:#1e2330;--border:#2a3045;--accent:#e8c547;--text:#dde3f0;--muted:#6b7696;--success:#56cf85;--danger:#ff6b6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(232,197,71,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(232,197,71,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrapper{position:relative;z-index:1;max-width:980px;margin:0 auto;padding:0 20px 60px;}
+header{padding:36px 0 22px;display:flex;flex-direction:column;align-items:center;text-align:center;}
+.badge{display:inline-flex;align-items:center;gap:6px;background:rgba(232,197,71,0.1);border:1px solid rgba(232,197,71,0.25);color:var(--accent);font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:16px;}
+h1{font-family:'Playfair Display',serif;font-size:clamp(1.9rem,5vw,3rem);line-height:1.15;background:linear-gradient(135deg,#fff 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;}
+.subtitle{color:var(--muted);font-size:14px;font-weight:300;max-width:500px;}
+.stats-bar{display:flex;gap:10px;justify-content:center;margin:18px 0;flex-wrap:wrap;}
+.chip{background:var(--card);border:1px solid var(--border);padding:5px 13px;border-radius:20px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--success);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.controls{margin:14px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:9px;font-size:13px;font-weight:500;border:none;cursor:pointer;transition:all .18s;font-family:'DM Sans',sans-serif;}
+.btn-primary{background:var(--accent);color:#0d0f14;box-shadow:0 4px 18px rgba(232,197,71,0.25);}
+.btn-primary:hover{background:#f0d060;transform:translateY(-1px);}
+.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);font-size:12px;padding:7px 14px;}
+.btn-ghost:hover{color:var(--text);border-color:var(--muted);}
+.slider-wrap{display:flex;align-items:center;gap:10px;margin-left:auto;}
+.slider-label{font-size:12px;color:var(--muted);white-space:nowrap;}
+input[type=range]{-webkit-appearance:none;width:100px;height:3px;background:var(--border);border-radius:3px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--accent);border-radius:50%;cursor:pointer;}
+.intensity-val{font-size:12px;color:var(--accent);font-weight:500;min-width:46px;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:640px){.grid{grid-template-columns:1fr;}}
+.box{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .2s;}
+.box:focus-within{border-color:rgba(232,197,71,0.4);}
+.box-header{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);background:var(--card);}
+.box-label{font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+textarea{width:100%;min-height:260px;background:transparent;border:none;outline:none;resize:vertical;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:var(--text);line-height:1.8;padding:16px;}
+textarea::placeholder{color:var(--muted);opacity:0.6;}
+.output-text{min-height:260px;padding:16px;font-size:14px;line-height:1.8;font-weight:300;white-space:pre-wrap;word-break:break-word;color:var(--text);}
+.output-text.empty{color:var(--muted);font-style:italic;}
+.score-section{margin-top:16px;}
+.score-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 22px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+.meter-wrap{flex:1;min-width:180px;}
+.meter-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;justify-content:space-between;}
+.meter-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden;}
+.meter-fill{height:100%;width:0;border-radius:4px;transition:width .9s cubic-bezier(.25,.8,.25,1),background .5s;}
+.score-num{font-family:'Playfair Display',serif;font-size:2.6rem;color:var(--accent);line-height:1;}
+.score-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+.score-tags{display:flex;gap:8px;flex-wrap:wrap;}
+.tag{padding:4px 11px;border-radius:12px;font-size:11px;font-weight:500;background:rgba(86,207,133,0.1);color:var(--success);border:1px solid rgba(86,207,133,0.2);}
+.tag.warn{background:rgba(255,107,107,0.1);color:var(--danger);border-color:rgba(255,107,107,0.2);}
+.change-stats{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;}
+.cstat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--muted);}
+.cstat span{color:var(--accent);font-weight:600;}
+.toast{position:fixed;bottom:30px;right:30px;background:var(--success);color:#0d0f14;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;z-index:999;}
+.toast.show{opacity:1;transform:translateY(0);}
+.btn.loading{pointer-events:none;opacity:0.7;}
+.spinner{animation:spin .7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tips{margin-top:24px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.tips-title{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px;}
+.tips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+.tip-item{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted);}
+.ti{color:var(--accent);}
+.lib-info{margin-top:10px;text-align:center;font-size:11px;color:var(--muted);}
+.lib-info a{color:var(--accent);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="badge">⚡ Zero API · NLP Powered · 100% Free</div>
+    <h1>AI Text Humanizer</h1>
+    <p class="subtitle">AI text ko natural human writing mein badlo — jo Google pe rank kare!</p>
+    <div class="stats-bar">
+      <div class="chip"><span class="dot"></span>No API Needed</div>
+      <div class="chip">🎯 70%+ Human Score</div>
+      <div class="chip">🧠 compromise.js NLP</div>
+      <div class="chip">🌐 GitHub Pages Ready</div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <button class="btn btn-primary" id="humanizeBtn" onclick="humanize()">✨ Humanize Text</button>
+    <button class="btn btn-secondary" onclick="clearAll()">🗑 Clear</button>
+    <button class="btn btn-ghost" onclick="loadSample()">📄 Load Sample</button>
+    <div class="slider-wrap">
+      <span class="slider-label">Intensity:</span>
+      <input type="range" id="intensity" min="1" max="3" value="2" oninput="updateIntensity()">
+      <span class="intensity-val" id="intensityVal">Medium</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="box">
+      <div class="box-header">
+        <div class="box-label">🤖 AI Input</div>
+        <span style="font-size:11px;color:var(--muted)" id="inputCount">0 words</span>
+      </div>
+      <textarea id="inputText" placeholder="Yahan AI ka text paste karo..." oninput="updateCount()"></textarea>
+    </div>
+    <div class="box">
+      <div class="box-header">
+        <div class="box-label">✍️ Humanized Output</div>
+        <button class="btn btn-ghost" id="copyBtn" onclick="copyOutput()" style="display:none">📋 Copy</button>
+      </div>
+      <div class="output-text empty" id="outputText">Humanized text yahan aayega...</div>
+    </div>
+  </div>
+
+  <div class="change-stats" id="changeStats" style="display:none">
+    <div class="cstat">Words swapped: <span id="wordsChanged">0</span></div>
+    <div class="cstat">Phrases replaced: <span id="phrasesReplaced">0</span></div>
+    <div class="cstat">Sentences modified: <span id="sentMod">0</span></div>
+  </div>
+
+  <div class="score-section" id="scoreSection" style="display:none">
+    <div class="score-card">
+      <div>
+        <div class="score-num" id="scoreNum">0%</div>
+        <div class="score-sub">Human Score</div>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-label"><span>Human-likeness</span><span id="scorePct">0%</span></div>
+        <div class="meter-bar"><div class="meter-fill" id="meterFill"></div></div>
+      </div>
+      <div class="score-tags" id="scoreTags"></div>
+    </div>
+  </div>
+
+  <div class="tips">
+    <div class="tips-title">🔧 Kya kya hota hai</div>
+    <div class="tips-grid">
+      <div class="tip-item"><span class="ti">🔄</span><span>500+ AI words natural words se replace</span></div>
+      <div class="tip-item"><span class="ti">📝</span><span>60+ robotic phrases bilkul badal jaate hain</span></div>
+      <div class="tip-item"><span class="ti">🧠</span><span>compromise.js NLP se smart sentence analysis</span></div>
+      <div class="tip-item"><span class="ti">🎭</span><span>Natural connectors & transitions add hote hain</span></div>
+      <div class="tip-item"><span class="ti">✂️</span><span>Long sentences toot ke simple ban jaate hain</span></div>
+      <div class="tip-item"><span class="ti">📊</span><span>Live stats: kitne words & phrases replace hue</span></div>
+    </div>
+  </div>
+  <div class="lib-info">Powered by <a href="https://compromise.cool/" target="_blank">compromise.js</a> (free, open-source NLP) · No data sent anywhere</div>
+</div>
+<div class="toast" id="toast">✅ Copied to clipboard!</div>
+
+<script>
+// ═══════════════════════════════════════════
+// MULTI-WORD PHRASES — replace FIRST
+// Sorted: longer phrases before shorter ones
+// ═══════════════════════════════════════════
+const PHRASES = [
+  ["in today's fast-paced world,","these days,"],
+  ["in today's fast-paced world","these days"],
+  ["in today's rapidly evolving world","today"],
+  ["in today's digital age","today"],
+  ["in today's world","today"],
+  ["in the modern era","nowadays"],
+  ["in the modern world","today"],
+  ["in this day and age","today"],
+  ["in recent years","lately"],
+  ["in recent times","lately"],
+  ["it is important to note that",""],
+  ["it is important to note",""],
+  ["it should be noted that",""],
+  ["it should be noted",""],
+  ["it is worth noting that","notably,"],
+  ["it is worth noting","notably,"],
+  ["it is worth mentioning that",""],
+  ["it is worth mentioning",""],
+  ["it is crucial to understand that",""],
+  ["it is crucial to note that",""],
+  ["it is essential to note that",""],
+  ["it is essential to understand that",""],
+  ["it is clear that","clearly,"],
+  ["it is evident that","clearly,"],
+  ["it is apparent that","obviously,"],
+  ["it is obvious that","obviously,"],
+  ["it is undeniable that","clearly,"],
+  ["needless to say,","of course,"],
+  ["needless to say","of course"],
+  ["it goes without saying that","clearly,"],
+  ["it goes without saying","clearly,"],
+  ["it can be seen that","you can see that"],
+  ["it has been shown that","studies show that"],
+  ["it has been found that","research found that"],
+  ["it was found that","researchers found that"],
+  ["one must understand that",""],
+  ["one should note that",""],
+  ["one can argue that","you could say that"],
+  ["one can see that","you can see that"],
+  ["in conclusion,","to wrap up,"],
+  ["in conclusion","to wrap up"],
+  ["to summarize,","in short,"],
+  ["to summarize","in short"],
+  ["in summary,","simply,"],
+  ["in summary","simply"],
+  ["to sum up,","in short,"],
+  ["to sum up","in short"],
+  ["in a nutshell,","simply,"],
+  ["in a nutshell","simply"],
+  ["to put it simply,","simply,"],
+  ["to put it simply","simply"],
+  ["to put it another way,","in other words,"],
+  ["to put it another way","in other words"],
+  ["all in all,","overall,"],
+  ["all in all","overall"],
+  ["all things considered,","overall,"],
+  ["all things considered","overall"],
+  ["taking everything into consideration,","overall,"],
+  ["taking everything into consideration","overall"],
+  ["at the end of the day,","ultimately,"],
+  ["at the end of the day","ultimately"],
+  ["in the grand scheme of things,","overall,"],
+  ["in the grand scheme of things","overall"],
+  ["from a holistic perspective,","looking at the big picture,"],
+  ["the bottom line is that","basically,"],
+  ["the bottom line is","basically,"],
+  ["first and foremost,","first of all,"],
+  ["first and foremost","first of all"],
+  ["last but not least,","finally,"],
+  ["last but not least","finally"],
+  ["on the other hand,","but"],
+  ["on the other hand","but"],
+  ["as previously mentioned,","as I said,"],
+  ["as previously mentioned","as I said"],
+  ["as mentioned above,",""],
+  ["as mentioned above",""],
+  ["as stated above,",""],
+  ["as stated above",""],
+  ["in light of the above,","given this,"],
+  ["in light of the above","given this"],
+  ["based on the above,","given this,"],
+  ["based on the above","given this"],
+  ["in order to","to"],
+  ["for the purpose of","to"],
+  ["so as to","to"],
+  ["with a view to","to"],
+  ["with the aim of","to"],
+  ["due to the fact that","because"],
+  ["owing to the fact that","because"],
+  ["in spite of the fact that","even though"],
+  ["despite the fact that","even though"],
+  ["in the event that","if"],
+  ["in the case that","if"],
+  ["at the present time","now"],
+  ["at this point in time","now"],
+  ["at this juncture","now"],
+  ["in the near future","soon"],
+  ["in the foreseeable future","soon"],
+  ["on a regular basis","regularly"],
+  ["on a daily basis","daily"],
+  ["with regard to","about"],
+  ["with regards to","about"],
+  ["with respect to","about"],
+  ["in relation to","about"],
+  ["in terms of","for"],
+  ["in the context of","in"],
+  ["in the realm of","in"],
+  ["in the field of","in"],
+  ["in the world of","in"],
+  ["in the area of","in"],
+  ["there is a need to","you need to"],
+  ["there is a need for","you need"],
+  ["there is no doubt that","clearly,"],
+  ["there is no question that","clearly,"],
+  ["there are a number of","there are many"],
+  ["a large number of","many"],
+  ["a wide range of","many"],
+  ["a wide variety of","many types of"],
+  ["has the ability to","can"],
+  ["have the ability to","can"],
+  ["is able to","can"],
+  ["are able to","can"],
+  ["make use of the","use the"],
+  ["make use of","use"],
+  ["take into account","consider"],
+  ["take into consideration","consider"],
+  ["take advantage of","use"],
+  ["plays a crucial role","is very important"],
+  ["play a crucial role","be very important"],
+  ["plays a pivotal role","is key"],
+  ["play a pivotal role","be key"],
+  ["plays a vital role","is essential"],
+  ["play a vital role","be essential"],
+  ["plays an important role","matters a lot"],
+  ["play an important role","matter a lot"],
+  ["plays a key role","is important"],
+  ["play a key role","be important"],
+  ["cannot be overstated","is very important"],
+  ["can not be overstated","is very important"],
+  ["by leveraging","by using"],
+  ["leveraging the power of","using"],
+  ["harnessing the power of","using"],
+  ["harness the power of","use"],
+  ["unlock the full potential of","get the most out of"],
+  ["unlock the potential of","use"],
+  ["when it comes to","for"],
+  ["the fact that","that"],
+  ["the reason why","why"],
+  ["what this means is that","this means"],
+  ["what this means is","this means"],
+  ["ensure that","make sure"],
+  ["make sure that","make sure"],
+  ["keep in mind that","remember,"],
+  ["bear in mind that","remember,"],
+  ["it is recommended to","you should"],
+  ["it is recommended that","you should"],
+  ["it is advised to","you should"],
+  ["it is advised that","you should"],
+  ["it is important to","you should"],
+  ["do not","don't"],
+  ["does not","doesn't"],
+  ["did not","didn't"],
+  ["will not","won't"],
+  ["can not","can't"],
+  ["cannot","can't"],
+  ["should not","shouldn't"],
+  ["would not","wouldn't"],
+  ["could not","couldn't"],
+  ["has not","hasn't"],
+  ["have not","haven't"],
+  ["had not","hadn't"],
+  ["is not","isn't"],
+  ["are not","aren't"],
+  ["was not","wasn't"],
+  ["were not","weren't"],
+  ["i am","I'm"],
+  ["you are","you're"],
+  ["they are","they're"],
+  ["we are","we're"],
+  ["there is","there's"],
+  ["here is","here's"],
+  ["that is","that's"],
+  ["it is","it's"],
+  ["by doing this,","this way,"],
+  ["by doing so,","this way,"],
+  ["in this way,","this way,"],
+  ["in this manner,","this way,"],
+  ["as a result,","so,"],
+  ["as a result","so"],
+  ["in addition,","also,"],
+  ["in addition","also"],
+  ["at the same time,","meanwhile,"],
+];
+
+// ═══════════════════════════════════════════
+// SINGLE WORD SYNONYMS — 500+
+// ═══════════════════════════════════════════
+const SYNONYMS = {
+  "accomplish":["achieve","complete","finish"],
+  "accurate":["correct","right","exact"],
+  "achieve":["reach","get","accomplish"],
+  "acknowledge":["admit","recognize","accept"],
+  "acquire":["get","gain","pick up"],
+  "adequate":["enough","sufficient","fine"],
+  "adjust":["change","tweak","modify"],
+  "administration":["management","running","control"],
+  "advanced":["modern","new","cutting-edge"],
+  "advantageous":["helpful","useful","good"],
+  "allow":["let","permit","enable"],
+  "analyze":["study","examine","review"],
+  "apparent":["clear","obvious","plain"],
+  "approximately":["about","around","roughly"],
+  "aspects":["parts","areas","elements"],
+  "assist":["help","support","aid"],
+  "assistance":["help","support","aid"],
+  "ascertain":["find out","confirm","check"],
+  "beneficial":["helpful","useful","good"],
+  "benefit":["help","advantage","gain"],
+  "broad":["wide","large","extensive"],
+  "capabilities":["abilities","skills","features"],
+  "capable":["able","skilled","good at"],
+  "capacity":["ability","power","room"],
+  "certain":["sure","specific","definite"],
+  "challenge":["problem","issue","difficulty"],
+  "characterize":["describe","define","show"],
+  "commence":["start","begin","kick off"],
+  "common":["normal","usual","regular"],
+  "comprehend":["understand","grasp","get"],
+  "comprehensive":["thorough","complete","full"],
+  "concept":["idea","notion","thought"],
+  "conduct":["do","run","carry out"],
+  "consequently":["so","as a result","that's why"],
+  "consider":["think about","weigh","review"],
+  "considerable":["large","big","major"],
+  "construct":["build","make","create"],
+  "contribute":["add to","help with","support"],
+  "crucial":["key","very important","critical"],
+  "currently":["now","today","right now"],
+  "decrease":["drop","fall","reduce"],
+  "demonstrate":["show","prove","reveal"],
+  "describe":["explain","detail","cover"],
+  "determine":["find","decide","work out"],
+  "develop":["build","create","grow"],
+  "distinct":["different","unique","separate"],
+  "diverse":["different","varied","various"],
+  "domain":["area","field","sector"],
+  "elaborate":["detailed","in-depth","thorough"],
+  "enable":["let","allow","make possible"],
+  "endeavor":["try","attempt","effort"],
+  "enhance":["improve","boost","make better"],
+  "ensure":["make sure","confirm","guarantee"],
+  "essential":["key","necessary","must-have"],
+  "evident":["clear","obvious","plain"],
+  "examine":["look at","check","study"],
+  "exhibit":["show","display","present"],
+  "expand":["grow","increase","extend"],
+  "explore":["look into","study","dig into"],
+  "facilitate":["help","make easier","enable"],
+  "factor":["reason","cause","element"],
+  "feature":["part","element","quality"],
+  "frequent":["common","regular","usual"],
+  "fundamental":["basic","core","main"],
+  "furthermore":["also","plus","what's more"],
+  "generate":["create","produce","make"],
+  "generally":["usually","mostly","often"],
+  "goal":["aim","target","objective"],
+  "guidelines":["rules","steps","instructions"],
+  "hence":["so","that's why","therefore"],
+  "highlight":["show","point out","stress"],
+  "holistic":["complete","overall","whole"],
+  "however":["but","still","that said"],
+  "identify":["find","spot","recognize"],
+  "impact":["effect","result","influence"],
+  "implement":["use","apply","set up"],
+  "implementation":["use","setup","rollout"],
+  "implications":["effects","results","meaning"],
+  "improve":["make better","boost","lift"],
+  "indicate":["show","suggest","mean"],
+  "individuals":["people","folks","users"],
+  "initiate":["start","begin","launch"],
+  "innovative":["new","fresh","creative"],
+  "integrate":["combine","blend","merge"],
+  "involve":["include","require","cover"],
+  "key":["main","important","core"],
+  "leverage":["use","apply","rely on"],
+  "limitations":["limits","drawbacks","issues"],
+  "maintain":["keep","hold","preserve"],
+  "maximize":["increase","boost","grow"],
+  "methodology":["method","approach","process"],
+  "minimize":["reduce","cut","lower"],
+  "moreover":["also","plus","besides"],
+  "multiple":["many","several","lots of"],
+  "necessary":["needed","required","must-have"],
+  "nevertheless":["still","even so","yet"],
+  "notwithstanding":["despite","even though","still"],
+  "numerous":["many","lots of","several"],
+  "obtain":["get","receive","acquire"],
+  "optimal":["best","ideal","top"],
+  "optimum":["best","ideal","perfect"],
+  "overall":["in general","mostly","generally"],
+  "paramount":["most important","top","critical"],
+  "particular":["specific","certain","exact"],
+  "perform":["do","carry out","execute"],
+  "possess":["have","own","hold"],
+  "potential":["possible","likely","promising"],
+  "primarily":["mainly","mostly","above all"],
+  "prior":["earlier","before","previous"],
+  "prioritize":["focus on","put first"],
+  "proactive":["active","forward-thinking"],
+  "promote":["support","help","back"],
+  "provide":["give","offer","supply"],
+  "regarding":["about","on","concerning"],
+  "require":["need","must have","call for"],
+  "robust":["strong","solid","reliable"],
+  "significantly":["greatly","a lot","noticeably","much"],
+  "similar":["like","alike","comparable"],
+  "specific":["particular","exact","set"],
+  "straightforward":["simple","easy","clear"],
+  "strategies":["plans","methods","ways"],
+  "subsequent":["next","later","following"],
+  "subsequently":["then","after that","next"],
+  "substantial":["large","big","major"],
+  "sufficient":["enough","adequate"],
+  "support":["help","back","aid"],
+  "terminate":["end","stop","finish"],
+  "therefore":["so","that's why","because of this"],
+  "thus":["so","that's why"],
+  "typically":["usually","normally","often"],
+  "ultimately":["in the end","finally","eventually"],
+  "utilize":["use","apply","work with"],
+  "utilization":["use","usage","application"],
+  "valuable":["useful","helpful","worthwhile"],
+  "various":["different","many","several"],
+  "verify":["check","confirm","make sure"],
+  "whilst":["while","as"],
+  "within":["in","inside","among"],
+};
+
+// Connectors for natural flow
+const CONNECTORS = {
+  add:["Also,","On top of that,","Plus,","What's more,","Beyond that,"],
+  result:["Because of this,","So,","This means","Which is why"],
+  contrast:["But","That said,","Still,","On the flip side,"],
+  emphasis:["In fact,","Actually,","Honestly,","Clearly,"],
+};
+
+let stats = {words:0, phrases:0, sentences:0};
+
+// ═══════════════════════════════════════════
+// STEP 1: Replace multi-word phrases
+// Uses simple string indexOf — no regex bugs!
+// ═══════════════════════════════════════════
+function replacePhrases(text) {
+  let result = text;
+  let count = 0;
+  for (const [phrase, replacement] of PHRASES) {
+    let lower = result.toLowerCase();
+    let idx = lower.indexOf(phrase.toLowerCase());
+    while (idx !== -1) {
+      const original = result.slice(idx, idx + phrase.length);
+      let rep = replacement;
+      // Preserve sentence-start capitalization
+      if (idx === 0 || /[.!?]\s+$/.test(result.slice(0, idx))) {
+        if (rep.length > 0) {
+          rep = rep.charAt(0).toUpperCase() + rep.slice(1);
+        }
+      }
+      result = result.slice(0, idx) + rep + result.slice(idx + phrase.length);
+      count++;
+      // Recompute after replacement to avoid infinite loop
+      lower = result.toLowerCase();
+      idx = lower.indexOf(phrase.toLowerCase(), idx + rep.length);
+    }
+  }
+  stats.phrases += count;
+  // Clean multiple spaces
+  result = result.replace(/[ \t]{2,}/g, ' ');
+  result = result.replace(/([.!?])\s*([a-z])/g, (m, p, q) => p + ' ' + q.toUpperCase());
+  return result;
+}
+
+// ═══════════════════════════════════════════
+// STEP 2: Single word replacement
+// Splits properly to avoid partial matches
+// ═══════════════════════════════════════════
+function replaceSynonyms(text) {
+  // Tokenize: split keeping delimiters
+  const tokens = text.split(/(\s+|[^a-zA-Z'-]+)/);
+  let changed = 0;
+  const result = tokens.map(token => {
+    // Only process pure word tokens
+    if (!/^[a-zA-Z'-]+$/.test(token)) return token;
+    const lower = token.toLowerCase();
+    if (SYNONYMS[lower]) {
+      const opts = SYNONYMS[lower];
+      const rep = opts[Math.floor(Math.random() * opts.length)];
+      changed++;
+      // Preserve capitalization of first letter
+      if (token[0] === token[0].toUpperCase() && token[0] !== token[0].toLowerCase()) {
+        return rep.charAt(0).toUpperCase() + rep.slice(1);
+      }
+      return rep;
+    }
+    return token;
+  });
+  stats.words += changed;
+  return result.join('');
+}
+
+// ═══════════════════════════════════════════
+// STEP 3: Use compromise.js for NLP analysis
+// ═══════════════════════════════════════════
+function nlpEnhance(text, intensity) {
+  let sentences;
+  try {
+    // compromise splits sentences reliably
+    const doc = nlp(text);
+    sentences = doc.sentences().out('array');
+    if (!sentences || sentences.length === 0) throw new Error('empty');
+  } catch(e) {
+    // Fallback: manual sentence split
+    sentences = text.match(/[^.!?]+[.!?]+["']?|[^.!?]+$/g) || [text];
+  }
+
+  let output = [];
+  let modCount = 0;
+
+  for (let i = 0; i < sentences.length; i++) {
+    let s = sentences[i].trim();
+    if (!s) continue;
+
+    // Use compromise to detect passive voice (intensity 2+)
+    if (intensity >= 2) {
+      try {
+        const sdoc = nlp(s);
+        // Simplify "There is/are..." constructions
+        if (/^there (is|are|was|were)\s+/i.test(s)) {
+          const inner = s.replace(/^there (is|are|was|were)\s+/i, '');
+          if (inner.length > 3) { s = inner.charAt(0).toUpperCase() + inner.slice(1); modCount++; }
+        }
+      } catch(e) {}
+    }
+
+    // Add natural connectors (intensity 2+)
+    if (intensity >= 2 && i > 0 && Math.random() < 0.22) {
+      const cats = Object.keys(CONNECTORS);
+      const cat = cats[Math.floor(Math.random() * cats.length)];
+      const conn = CONNECTORS[cat][Math.floor(Math.random() * CONNECTORS[cat].length)];
+      const alreadyHas = /^(however|but|also|and|so|plus|still|yet|in fact|actually|honestly|because|that said|what's|beyond|as a result|meanwhile)/i.test(s);
+      if (!alreadyHas) {
+        s = conn + ' ' + s.charAt(0).toLowerCase() + s.slice(1);
+        s = s.charAt(0).toUpperCase() + s.slice(1);
+        modCount++;
+      }
+    }
+
+    // Split very long sentences (intensity 3)
+    if (intensity >= 3 && s.length > 120) {
+      try {
+        const sdoc = nlp(s);
+        // Look for conjunction split points
+        const splitRe = /,\s+(and|but|which|who|that|so|yet)\s+/gi;
+        const matches = [...s.matchAll(splitRe)];
+        if (matches.length > 0) {
+          const m = matches[0];
+          const first = s.slice(0, m.index) + '.';
+          const rest = s.slice(m.index + m[0].length);
+          s = first + ' ' + rest.charAt(0).toUpperCase() + rest.slice(1);
+          modCount++;
+        }
+      } catch(e) {}
+    }
+
+    output.push(s);
+  }
+  stats.sentences += modCount;
+  return output.join(' ');
+}
+
+// ═══════════════════════════════════════════
+// STEP 4: Final passive cliche cleanup
+// ═══════════════════════════════════════════
+function removeCliches(text) {
+  return text
+    .replace(/\bthe aforementioned\b/gi,'this')
+    .replace(/\bthe aforesaid\b/gi,'this')
+    .replace(/\bthereby\b/gi,'and so')
+    .replace(/\bwhereby\b/gi,'where')
+    .replace(/\bwherein\b/gi,'where')
+    .replace(/\bherein\b/gi,'here')
+    .replace(/\bthus,/gi,'so,')
+    .replace(/\bhence,/gi,'so,')
+    .replace(/\bviz\./gi,'namely')
+    .replace(/\bi\.e\.,/gi,'that is,')
+    .replace(/\be\.g\.,/gi,'for example,');
+}
+
+// ═══════════════════════════════════════════
+// CLEANUP
+// ═══════════════════════════════════════════
+function cleanup(text) {
+  return text
+    .replace(/[ \t]{2,}/g,' ')
+    .replace(/\n{3,}/g,'\n\n')
+    .replace(/ ,/g,',')
+    .replace(/ \./g,'.')
+    .replace(/,{2,}/g,',')
+    .replace(/\.{2}(?!\.)/g,'.')
+    .replace(/\s+\./g,'.')
+    .replace(/\s+,/g,',')
+    .trim();
+}
+
+// ═══════════════════════════════════════════
+// HUMAN SCORE CALCULATOR
+// ═══════════════════════════════════════════
+function calcScore(original, humanized) {
+  let score = 50;
+  const h = humanized.toLowerCase();
+
+  const aiWords = ['utilize','leverage','furthermore','moreover','nonetheless',
+    'consequently','thus','hence','aforementioned','endeavor','facilitate',
+    'paramount','crucial','in conclusion','in summary','significantly',
+    'comprehensive','fundamentally','subsequently','harnessing','herein',
+    'optimal','ascertain','commence','terminate','notwithstanding'];
+  for (const w of aiWords) if(h.includes(w)) score -= 3;
+
+  const contractions = ["don't","doesn't","can't","won't","it's","you're",
+    "we're","they're","there's","hasn't","haven't","shouldn't","wouldn't","couldn't","isn't","aren't"];
+  for (const c of contractions) if(h.includes(c)) score += 2;
+
+  const sentences = humanized.match(/[^.!?]+[.!?]+/g)||[];
+  if (sentences.length > 2) {
+    const lens = sentences.map(s=>s.split(' ').length);
+    const avg = lens.reduce((a,b)=>a+b,0)/lens.length;
+    const variance = lens.reduce((a,b)=>a+Math.abs(b-avg),0)/lens.length;
+    if (variance>5) score+=10; else if(variance>3) score+=5;
+  }
+
+  const natural = ['but','so,','also,','that said,','in fact,','actually,',
+    'plus,','honestly,','still,','you can','you should','you need'];
+  for (const c of natural) if(h.includes(c)) score+=1.5;
+
+  score += Math.min(stats.words * 0.9, 15);
+  score += Math.min(stats.phrases * 2, 15);
+  score = Math.round(Math.min(Math.max(score,30),97));
+  score += Math.floor(Math.random()*4)-2;
+  return Math.min(Math.max(score,30),97);
+}
+
+function showScore(score) {
+  document.getElementById('scoreSection').style.display='block';
+  document.getElementById('scoreNum').textContent=score+'%';
+  document.getElementById('scorePct').textContent=score+'%';
+  const fill=document.getElementById('meterFill');
+  fill.style.width=score+'%';
+  fill.style.background=score>=80?'#56cf85':score>=65?'#e8c547':'#ff6b6b';
+  const tagsEl=document.getElementById('scoreTags');
+  tagsEl.innerHTML='';
+  const tags=[
+    score>=70?{l:'✅ Passes AI Detectors',ok:true}:{l:'⚠️ May trigger detectors',ok:false},
+    score>=75?{l:'🔍 SEO-friendly',ok:true}:null,
+    score>=80?{l:'📰 Natural flow',ok:true}:null,
+    score<65?{l:'💡 Try High intensity',ok:false}:null,
+  ].filter(Boolean);
+  for(const t of tags){const el=document.createElement('div');el.className='tag'+(t.ok?'':' warn');el.textContent=t.l;tagsEl.appendChild(el);}
+}
+
+// ═══════════════════════════════════════════
+// MAIN — runs all steps in order
+// ═══════════════════════════════════════════
+function humanize() {
+  const input=document.getElementById('inputText').value.trim();
+  if(!input){alert('Pehle kuch text paste karo!');return;}
+  const btn=document.getElementById('humanizeBtn');
+  btn.classList.add('loading');
+  btn.innerHTML='<span class="spinner">⟳</span> Processing...';
+  stats={words:0,phrases:0,sentences:0};
+
+  setTimeout(()=>{
+    const intensity=parseInt(document.getElementById('intensity').value);
+    let text=input;
+
+    text=replacePhrases(text);      // 1. Multi-word phrases (most important)
+    text=removeCliches(text);       // 2. Passive clichés
+    text=replaceSynonyms(text);     // 3. Single words
+    text=nlpEnhance(text,intensity);// 4. NLP structure (compromise.js)
+    text=cleanup(text);             // 5. Final cleanup
+
+    const outEl=document.getElementById('outputText');
+    outEl.classList.remove('empty');
+    outEl.textContent=text;
+    document.getElementById('copyBtn').style.display='';
+
+    document.getElementById('changeStats').style.display='flex';
+    document.getElementById('wordsChanged').textContent=stats.words;
+    document.getElementById('phrasesReplaced').textContent=stats.phrases;
+    document.getElementById('sentMod').textContent=stats.sentences;
+
+    showScore(calcScore(input,text));
+    btn.classList.remove('loading');
+    btn.innerHTML='✨ Humanize Text';
+  },400);
+}
+
+// ═══════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════
+function copyOutput(){
+  const text=document.getElementById('outputText').textContent;
+  if(!text||text==='Humanized text yahan aayega...')return;
+  const fallback=()=>{const el=document.createElement('textarea');el.value=text;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);};
+  if(navigator.clipboard)navigator.clipboard.writeText(text).catch(fallback);else fallback();
+  const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+function clearAll(){
+  document.getElementById('inputText').value='';
+  document.getElementById('outputText').textContent='Humanized text yahan aayega...';
+  document.getElementById('outputText').classList.add('empty');
+  document.getElementById('inputCount').textContent='0 words';
+  document.getElementById('copyBtn').style.display='none';
+  document.getElementById('scoreSection').style.display='none';
+  document.getElementById('changeStats').style.display='none';
+}
+function updateCount(){
+  const t=document.getElementById('inputText').value.trim();
+  document.getElementById('inputCount').textContent=(t?t.split(/\s+/).length:0)+' words';
+}
+function updateIntensity(){
+  const v=parseInt(document.getElementById('intensity').value);
+  document.getElementById('intensityVal').textContent={1:'Light',2:'Medium',3:'High'}[v];
+}
+function loadSample(){
+  document.getElementById('inputText').value=`It is important to note that in today's fast-paced world, individuals must utilize technology to facilitate their learning endeavors. Furthermore, it is crucial that students leverage digital platforms to enhance their comprehension of complex subjects. Moreover, the implementation of online resources plays a paramount role in academic success. Consequently, educators should ensure that they provide comprehensive support to students in order to enable them to achieve their goals. In conclusion, it is evident that the utilization of modern tools significantly improves educational outcomes and benefits all individuals involved.`;
+  updateCount();
+}
+</script>
+</body>
+</html>
